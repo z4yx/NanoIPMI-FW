@@ -198,6 +198,17 @@ void link_state_changed(void)
 
 }
 
+uint8_t* Network_GetMQTTBrokerIP(void)
+{
+    return gWIZNETINFO.logserver;
+}
+
+bool Network_IsNetworkReady(void)
+{
+    return last_link_state && (gWIZNETINFO.dhcp == NETINFO_STATIC ||
+        (gWIZNETINFO.dhcp == NETINFO_DHCP && isDHCPLeased()));
+}
+
 void Network_Task()
 {
 
@@ -217,7 +228,8 @@ void Network_Task()
         timerDHCP = HAL_GetTick();
     }
 
-    // RelayApp_Run();
+    if(!last_link_state)
+        return;
     
     /* DHCP */
     /* DHCP IP allocation and check the DHCP lease time (for IP renewal) */
@@ -248,7 +260,8 @@ void Network_Task()
             /* ===== Example pseudo code =====  */
             // The below code can be replaced your code or omitted.
             // if omitted, retry to process DHCP
-            my_dhcp_retry++;
+
+            // my_dhcp_retry++; // never fallback
             if (my_dhcp_retry > MY_MAX_DHCP_RETRY) {
                 // gWIZNETINFO.dhcp = NETINFO_STATIC;
                 DHCP_stop();      // if restart, recall DHCP_init()

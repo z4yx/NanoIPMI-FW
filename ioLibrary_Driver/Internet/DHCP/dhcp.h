@@ -45,6 +45,8 @@
 #ifndef _DHCP_H_
 #define _DHCP_H_
 
+#include <stdbool.h>
+
 /*
  * @brief 
  * @details If you want to display debug & procssing message, Define _DHCP_DEBUG_ 
@@ -150,5 +152,6 @@ void getDNSfromDHCP(uint8_t* ip);
 uint32_t getDHCPLeasetime(void);
 
 void getLogServerfromDHCP(uint8_t* ip);
+bool isDHCPLeased(void);
 
 #endif	/* _DHCP_H_ */

@@ -52,6 +52,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "network.h"
+#include "ipmi-app.h"
 #include "led.h"
 #include "stm32f1xx_ll_usart.h"
 #include "common.h"
@@ -148,7 +149,7 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
     Network_Task();
-
+    IPMIApp_Task();
   }
   /* USER CODE END 3 */
 

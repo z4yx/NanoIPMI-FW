@@ -53,6 +53,9 @@ C_SOURCES =  \
 $(wildcard ioLibrary_Driver/Ethernet/*.c) \
 $(wildcard ioLibrary_Driver/Ethernet/W5500/*.c) \
 $(wildcard ioLibrary_Driver/Internet/DHCP/*.c) \
+$(wildcard MQTTPacket/*.c) \
+$(wildcard MQTTClient-C/*.c) \
+$(wildcard nanopb/*.c) \
 $(wildcard Src/*.c) \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c \
@@ -124,6 +127,7 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
+-DMQTTCLIENT_PLATFORM_HEADER=MQTT-Plat.h \
 -DUSE_HAL_DRIVER \
 -DSTM32F103xB
 
@@ -136,6 +140,9 @@ C_INCLUDES =  \
 -IioLibrary_Driver/Ethernet \
 -IioLibrary_Driver/Ethernet/W5500 \
 -IioLibrary_Driver/Internet/DHCP \
+-IMQTTPacket \
+-IMQTTClient-C \
+-Inanopb \
 -IInc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy \

@@ -992,6 +992,11 @@ uint32_t getDHCPLeasetime(void)
 	return dhcp_lease_time;
 }
 
+bool isDHCPLeased(void)
+{
+    return dhcp_state == STATE_DHCP_LEASED;
+}
+
 
 
 

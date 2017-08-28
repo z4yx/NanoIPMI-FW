@@ -1,4 +1,5 @@
 #include "common.h"
+#include "stm32f1xx_hal.h"
 #include "eeprom.h"
 #include <string.h>
 

@@ -152,6 +152,7 @@ void getDNSfromDHCP(uint8_t* ip);
 uint32_t getDHCPLeasetime(void);
 
 void getLogServerfromDHCP(uint8_t* ip);
+const char* getHostnamefromDHCP(void);
 bool isDHCPLeased(void);
 
 #endif	/* _DHCP_H_ */

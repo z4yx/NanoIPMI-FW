@@ -1006,6 +1006,11 @@ void getLogServerfromDHCP(uint8_t* ip)
    ip[3] = DHCP_allocated_logserver[3];         
 }
 
+const char* getHostnamefromDHCP(void)
+{
+   return DHCP_allocated_hostname;        
+}
+
 uint32_t getDHCPLeasetime(void)
 {
 	return dhcp_lease_time;

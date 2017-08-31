@@ -180,6 +180,9 @@ LDFLAGS = $(MCU) -specs=nosys.specs -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
+nanopb/control-channel.pb.c: nanopb/control-channel.proto 
+	protoc --plugin=protoc-gen-nanopb=generator/protoc-gen-nanopb --nanopb_out=./ $<
+
 
 #######################################
 # build the application

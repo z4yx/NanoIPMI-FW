@@ -187,7 +187,7 @@ void Network_ModifyNetconf(wiz_NetInfo* newconf)
 void link_state_changed(void)
 {
     if (gWIZNETINFO.dhcp == NETINFO_DHCP){
-        if(last_link_state && DHCP_run()==DHCP_STOPPED) {
+        if(last_link_state) {
             LOG_INFO("Link UP, DHCP started");
             DHCP_init(SOCK_DHCP, gDATABUF);
         }else if(!last_link_state){

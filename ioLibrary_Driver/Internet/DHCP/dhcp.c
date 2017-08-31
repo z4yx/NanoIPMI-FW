@@ -200,6 +200,7 @@ uint8_t DHCP_allocated_gw[4]  = {0, };    // Gateway address from DHCP
 uint8_t DHCP_allocated_sn[4]  = {0, };    // Subnet mask from DHCP
 uint8_t DHCP_allocated_dns[4] = {0, };    // DNS address from DHCP
 uint8_t DHCP_allocated_logserver[4] = {0, };    // Log server address from DHCP
+uint8_t DHCP_allocated_hostname[32];
 
 
 int8_t   dhcp_state        = STATE_DHCP_INIT;   // DHCP state
@@ -386,10 +387,11 @@ void send_DHCP_DISCOVER(void)
 	pDHCPMSG->OPT[k - (i+3+1)] = i+3; // length of hostname
 
 	pDHCPMSG->OPT[k++] = dhcpParamRequest;
-	pDHCPMSG->OPT[k++] = 0x07;	// length of request
+	pDHCPMSG->OPT[k++] = 0x08;	// length of request
 	pDHCPMSG->OPT[k++] = subnetMask;
 	pDHCPMSG->OPT[k++] = routersOnSubnet;
 	pDHCPMSG->OPT[k++] = dns;
+    pDHCPMSG->OPT[k++] = hostName;
 	pDHCPMSG->OPT[k++] = domainName;
 	pDHCPMSG->OPT[k++] = dhcpT1value;
     pDHCPMSG->OPT[k++] = dhcpT2value;
@@ -486,10 +488,11 @@ void send_DHCP_REQUEST(void)
 	pDHCPMSG->OPT[k - (i+3+1)] = i+3; // length of hostname
 	
 	pDHCPMSG->OPT[k++] = dhcpParamRequest;
-	pDHCPMSG->OPT[k++] = 0x09;
+	pDHCPMSG->OPT[k++] = 0x0a; // number of requests
 	pDHCPMSG->OPT[k++] = subnetMask;
 	pDHCPMSG->OPT[k++] = routersOnSubnet;
 	pDHCPMSG->OPT[k++] = dns;
+    pDHCPMSG->OPT[k++] = hostName;
 	pDHCPMSG->OPT[k++] = domainName;
 	pDHCPMSG->OPT[k++] = dhcpT1value;
 	pDHCPMSG->OPT[k++] = dhcpT2value;
@@ -650,6 +653,19 @@ int8_t parseDHCPMSG(void)
                 DHCP_allocated_logserver[3] = *p++;
                 p = p + (opt_len - 4);
                 break;
+            case hostName :
+                p++;
+                opt_len = *p++;
+                {
+                    uint8_t l = sizeof(DHCP_allocated_hostname)-1;
+                    if(opt_len < l)
+                        l = opt_len;
+                    memcpy(DHCP_allocated_hostname, p, l);
+                    DHCP_allocated_hostname[l] = '\0';
+                    printf("DHCP_allocated_hostname=%s\r\n", DHCP_allocated_hostname);
+                }
+                p += opt_len;
+                break;
    			case dhcpIPaddrLeaseTime :
    				p++;
    				opt_len = *p++;
@@ -687,8 +703,11 @@ uint8_t DHCP_run(void)
 
 	if(dhcp_state == STATE_DHCP_STOP) return DHCP_STOPPED;
 
-	if(getSn_SR(DHCP_SOCKET) != SOCK_UDP)
+	if(getSn_SR(DHCP_SOCKET) != SOCK_UDP){
+        printf("create socket\r\n");
 	   socket(DHCP_SOCKET, Sn_MR_UDP, DHCP_CLIENT_PORT, 0x00);
+        printf("create socket done\r\n");
+    }
 
 	ret = DHCP_RUNNING;
 	type = parseDHCPMSG();

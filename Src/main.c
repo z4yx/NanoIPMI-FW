@@ -92,6 +92,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
+void ATX_Task(void);
 
 /* USER CODE END PFP */
 
@@ -150,6 +151,7 @@ int main(void)
   /* USER CODE BEGIN 3 */
     Network_Task();
     IPMIApp_Task();
+    ATX_Task();
   }
   /* USER CODE END 3 */
 
@@ -531,17 +533,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(IR_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PERST_Pin */
-  GPIO_InitStruct.Pin = PERST_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(PERST_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BTN_Pin */
-  GPIO_InitStruct.Pin = BTN_Pin;
+  /*Configure GPIO pins : PERST_Pin BTN_Pin */
+  GPIO_InitStruct.Pin = PERST_Pin|BTN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(BTN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 

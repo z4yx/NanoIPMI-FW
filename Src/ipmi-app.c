@@ -1,6 +1,7 @@
 #include "common.h"
 #include "ipmi-app.h"
 #include "network.h"
+#include "dhcp.h"
 #include "MQTTClient.h"
 #include "MQTT-Plat.h"
 #include <pb_encode.h>
@@ -13,8 +14,9 @@ static Network mqtt_net;
 static MQTTClient mqtt_client = DefaultClient;
 static char TOPIC_EVENT_MSG[40], TOPIC_STATUS_MSG[40], TOPIC_HELLO_MSG[40], TOPIC_CMD_MSG[40];
 static bool is_OS_monitor_on;
+static volatile uint32_t OS_monitor_fed;
 
-void IPMIApp_Init(const char* hostname)
+static void initTopics(const char* hostname)
 {
     if(!hostname || strlen(hostname)==0){
         hostname = "(unknown)";
@@ -32,6 +34,9 @@ static void handleMessage(Command *cmd)
             break;
         case 2: //idCommand
             is_OS_monitor_on = cmd->command.idCommand.on;
+            if(is_OS_monitor_on){
+                OS_monitor_fed = HAL_GetTick();
+            }
             LOG_DBG("set is_OS_monitor_on = %d", (int)is_OS_monitor_on);
             break;
         case 3: //powerCommand
@@ -50,9 +55,13 @@ static void handleMessage(Command *cmd)
 static int publishStruct(void * data, const pb_field_t fields[], const char* topic, enum QoS qos)
 {
     int rc;
-    uint8_t buffer[128];
+    static uint8_t buffer[64];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-    pb_encode(&stream, fields, &data);
+    LOG_DBG("bef enc");
+    if(!pb_encode(&stream, fields, &data)){
+        LOG_ERR("pb_encode failed");
+        return FAILURE;
+    }
     LOG_DBG("stream.bytes_written=%u", stream.bytes_written);
     MQTTMessage msg = {
         .qos = qos,
@@ -62,31 +71,43 @@ static int publishStruct(void * data, const pb_field_t fields[], const char* top
         .payloadlen = stream.bytes_written
     };
     rc = MQTTPublish(&mqtt_client, topic, &msg);
-    if(rc != SUCCESS)
+    if(rc != SUCCESS){
         LOG_WARN("%s failed with %d", topic, rc);
-
+        return FAILURE;
+    }
+    return SUCCESS;
 }
 
 static void reportStatus(void)
 {
     bool encode_fanRPM(pb_ostream_t *stream, const pb_field_t *field, void * const *arg)
     {
+        LOG_DBG("called");
+        /* This encodes the header for the field, based on the constant info
+         * from pb_field_t. */
+        if (!pb_encode_tag_for_field(stream, field))
+            return false;
+        if (!pb_encode_varint(stream, -1))
+            return false;
+
         return true;
     }
     static uint32_t lastReport;
     if(HAL_GetTick() - lastReport > 5000){
+        LOG_DBG("prepare to report");
         Status s = {
             .isPowerOn = ATX_GetPowerOnState(),
             .coreTemp = ADC_getTemperatureReading(),
             .isIDOn = is_OS_monitor_on,
             .isManualFanControl = false,
             .fanRPMs = {
-                .funcs = encode_fanRPM,
+                .funcs.encode = encode_fanRPM,
                 .arg = NULL
             },
         };
-        publishStruct(&s, Status_fields, TOPIC_STATUS_MSG, QOS0);
 
+        publishStruct(&s, Status_fields, TOPIC_STATUS_MSG, QOS0);
+        LOG_DBG("done");
         lastReport = HAL_GetTick();
     }
 
@@ -108,8 +129,8 @@ static void messageArrived(MessageData* md)
 
     Command cmd;
     pb_istream_t stream = pb_istream_from_buffer(message->payload, message->payloadlen);
-    pb_decode(&stream, Command_fields, &cmd);
-    handleMessage(&cmd);
+    if(pb_decode(&stream, Command_fields, &cmd))
+        handleMessage(&cmd);
 }
 
 static void sayHello(void)
@@ -163,17 +184,30 @@ static int IPMIApp_InitConn(void)
     return rc;
 }
 
+void IPMIApp_CDC_RecvCallback(uint32_t len)
+{
+    //feed watchdog
+    OS_monitor_fed = HAL_GetTick();
+}
+
 void IPMIApp_Task(void)
 {
+    if(is_OS_monitor_on && HAL_GetTick()-OS_monitor_fed > 20000){
+        LOG_INFO("OS Monitor reset triggered");
+        ATX_PowerCommand(Command_PowerCommand_PowerOp_RESET);
+        is_OS_monitor_on = false;
+    }
     if(!Network_IsNetworkReady())
         return;
     if(!MQTTIsConnected(&mqtt_client)){
+        initTopics(getHostnamefromDHCP());
         if(IPMIApp_InitConn() == SUCCESS){
             sayHello();
         }
+        LOG_DBG("over");
     }
     else{
-        reportStatus();
         MQTTYield(&mqtt_client, 200);
+        reportStatus();
     }
 }

@@ -254,8 +254,7 @@ void Network_Task()
             // TODO: insert user's code here
             // run_user_applications = true;
             //
-            LOG_DBG("IP Leased");
-            IPMIApp_Init(getHostnamefromDHCP());
+            // LOG_DBG("IP Leased");
             LED_Board(2, LED_ON);
             break;
         case DHCP_FAILED:

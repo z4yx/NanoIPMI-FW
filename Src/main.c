@@ -139,6 +139,7 @@ int main(void)
   LOG_INFO("MCU Initialized");
   Network_ChipInit();
   Network_AppInit();
+  LL_USART_EnableIT_RXNE(huart2.Instance);
 
   /* USER CODE END 2 */
 

@@ -1,8 +1,9 @@
 #include "common.h"
 #include "atx.h"
+#include "ipmi-app.h"
 #include "stm32f1xx_hal.h"
 
-typedef enum { 
+enum { 
     STATE_DOWN, 
     STATE_NORMAL, 
     STATE_WAIT_CHECK,
@@ -77,11 +78,13 @@ void ATX_Task(void)
             if(ATX_GetPowerOnState()){
                 if(atx_state != STATE_NORMAL){
                     LOG_INFO("Powered on");
+                    IPMIApp_EventCallback(Event_EventType_POWERON);
                     atx_state = STATE_NORMAL;
                 }
             }else{
                 if(atx_state != STATE_DOWN){
                     LOG_INFO("Powered off");
+                    IPMIApp_EventCallback(Event_EventType_POWEROFF);
                     atx_state = STATE_DOWN;
                 }
             }

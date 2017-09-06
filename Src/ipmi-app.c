@@ -15,6 +15,7 @@ static Network mqtt_net;
 static MQTTClient mqtt_client = DefaultClient;
 static char TOPIC_EVENT_MSG[40], TOPIC_STATUS_MSG[40], TOPIC_HELLO_MSG[40], TOPIC_CMD_MSG[40];
 static bool is_ID_function_on, OS_monitor_enabled;
+static uint8_t OS_monitor_return_sent;
 static volatile uint32_t OS_monitor_fed;
 
 static void initTopics(const char* hostname)
@@ -22,10 +23,10 @@ static void initTopics(const char* hostname)
     if(!hostname || strlen(hostname)==0){
         hostname = "(unknown)";
     }
-    snprintf(TOPIC_EVENT_MSG, sizeof(TOPIC_EVENT_MSG)-1, "/%s/Event", hostname);
-    snprintf(TOPIC_STATUS_MSG, sizeof(TOPIC_STATUS_MSG)-1, "/%s/Status", hostname);
-    snprintf(TOPIC_HELLO_MSG, sizeof(TOPIC_HELLO_MSG)-1, "/%s/Hello", hostname);
-    snprintf(TOPIC_CMD_MSG, sizeof(TOPIC_CMD_MSG)-1, "/%s/Command", hostname);
+    snprintf(TOPIC_EVENT_MSG, sizeof(TOPIC_EVENT_MSG)-1, "/event/%s", hostname);
+    snprintf(TOPIC_STATUS_MSG, sizeof(TOPIC_STATUS_MSG)-1, "/status/%s", hostname);
+    snprintf(TOPIC_HELLO_MSG, sizeof(TOPIC_HELLO_MSG)-1, "/hello/%s", hostname);
+    snprintf(TOPIC_CMD_MSG, sizeof(TOPIC_CMD_MSG)-1, "/command/%s", hostname);
 }
 
 static void handleMessage(Command *cmd)
@@ -59,7 +60,7 @@ static int publishStruct(void * data, const pb_field_t fields[], const char* top
         LOG_ERR("pb_encode failed");
         return FAILURE;
     }
-    LOG_DBG("stream.bytes_written=%u", stream.bytes_written);
+    LOG_VERBOSE("stream.bytes_written=%u", stream.bytes_written);
     MQTTMessage msg = {
         .qos = qos,
         .retained = 0,
@@ -85,12 +86,20 @@ static void reportStatus(void)
             return false;
         if (!pb_encode_varint(stream, -1))
             return false;
+        if (!pb_encode_tag_for_field(stream, field))
+            return false;
+        if (!pb_encode_varint(stream, -2))
+            return false;
+        if (!pb_encode_tag_for_field(stream, field))
+            return false;
+        if (!pb_encode_varint(stream, -3))
+            return false;
 
         return true;
     }
     static uint32_t lastReport;
     if(HAL_GetTick() - lastReport > 5000){
-        LOG_DBG("prepare to report");
+        LOG_DBG("Status report");
         Status s = {
             .isPowerOn = ATX_GetPowerOnState(),
             .coreTemp = ADC_getTemperatureReading(),
@@ -189,16 +198,37 @@ void IPMIApp_CDC_RecvCallback(uint32_t len)
     LOG_DBG("CDC_Recv %u", len);
 }
 
+void IPMIApp_EventCallback(uint8_t event)
+{
+    Event s = {
+        .type = event
+    };
+    LOG_INFO("Report event %u", (uint32_t)event);
+
+    publishStruct(&s, Event_fields, TOPIC_EVENT_MSG, QOS0);
+}
+
 void IPMIApp_Task(void)
 {
-    if(OS_monitor_enabled && HAL_GetTick()-OS_monitor_fed > 15000){
-        LOG_INFO("OS Monitor reset triggered");
-        ATX_PowerCommand(Command_PowerCommand_PowerOp_RESET);
-        OS_monitor_enabled = false;
-    }
-    else if(OS_monitor_enabled && HAL_GetTick()-OS_monitor_fed > 10000){
-        LOG_INFO("No UART output since 10s");
-        HostUART_Send_NoWait("\r");
+    if(OS_monitor_enabled){
+        if(HAL_GetTick()-OS_monitor_fed > 60000+5000){
+            LOG_INFO("OS Monitor reset triggered");
+            IPMIApp_EventCallback(Event_EventType_DOGTRIGGERED);
+            ATX_PowerCommand(Command_PowerCommand_PowerOp_RESET);
+            OS_monitor_enabled = false;
+            OS_monitor_return_sent = 0;
+        }
+        else if(HAL_GetTick()-OS_monitor_fed > 60000+1000
+            && OS_monitor_return_sent == 1){
+            HostUART_Send_NoWait("\r");
+            OS_monitor_return_sent ++ ;
+        }
+        else if(HAL_GetTick()-OS_monitor_fed > 60000
+            && OS_monitor_return_sent == 0){
+            LOG_INFO("No UART output since 60s");
+            HostUART_Send_NoWait("\r");
+            OS_monitor_return_sent ++ ;
+        }
     }
     if(!Network_IsNetworkReady())
         return;

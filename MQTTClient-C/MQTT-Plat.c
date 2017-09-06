@@ -84,7 +84,7 @@ static int sock_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 		}
 	}
 	if(bytes > 0){
-		LOG_DBG("Got %d bytes", bytes);
+		LOG_VERBOSE("Got %d bytes", bytes);
 	}
 	// if(TimerIsExpired(&tim))
 	// 	LOG_DBG("Reading timed out!");
@@ -94,7 +94,7 @@ static int sock_read(Network* n, unsigned char* buffer, int len, int timeout_ms)
 
 static int sock_write(Network* n, unsigned char* buffer, int len, int timeout_ms)
 {
-	LOG_DBG("Writing %d bytes", len);
+	LOG_VERBOSE("Writing %d bytes", len);
 	// setsockopt(n->my_socket, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv,sizeof(struct timeval));
 	int	rc = send(n->my_socket, buffer, len);
 	//SOCK_BUSY is 0, just return it

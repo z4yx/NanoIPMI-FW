@@ -9,6 +9,7 @@
 #include "control-channel.pb.h"
 #include "atx.h"
 #include "host_uart.h"
+#include "led.h"
 #include "app-version.h"
 
 
@@ -38,6 +39,7 @@ static void handleMessage(Command *cmd)
             break;
         case 2: //idCommand
             is_ID_function_on = cmd->command.idCommand.on;
+            LED_SetFlashing(is_ID_function_on);
             LOG_DBG("set is_ID_function_on = %d", (int)is_ID_function_on);
             break;
         case 3: //powerCommand
@@ -204,13 +206,37 @@ void IPMIApp_HostUART_RecvCallback(uint8_t data)
     //feed watchdog
     OS_monitor_fed = HAL_GetTick();
 }
-void IPMIApp_CDC_RecvCallback(uint32_t len)
+void IPMIApp_CDC_RecvCallback(uint8_t *buf, uint32_t len)
 {
+    static uint8_t cdc_state = 0;
     LOG_DBG("CDC_Recv %u", len);
-    if(len > 0){
-        OS_monitor_enabled = true;
-        OS_monitor_return_sent = 0;
-        OS_monitor_fed = HAL_GetTick();
+    for (uint32_t i = 0; i < len; ++i)
+    {
+        switch(cdc_state){
+            case 0:
+                if(0x55 == buf[i])
+                    cdc_state = 1;
+                break;
+            case 1:
+                if('$' == buf[i])
+                    cdc_state = 2;
+                else
+                    cdc_state = 0;
+                break;
+            case 2:
+                if('D' == buf[i]){
+                    LOG_INFO("OS monitor on");
+                    OS_monitor_return_sent = 0;
+                    OS_monitor_fed = HAL_GetTick();
+                    OS_monitor_enabled = true;
+                }
+                else if('1' == buf[i])
+                    LED_SetColor(COLOR_GREEN);
+                else if('0' == buf[i])
+                    LED_SetColor(COLOR_RED);
+                cdc_state = 0;
+                break;
+        }
     }
 }
 

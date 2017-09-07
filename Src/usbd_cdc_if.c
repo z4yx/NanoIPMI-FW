@@ -269,7 +269,7 @@ static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-  IPMIApp_CDC_RecvCallback(*Len);
+  IPMIApp_CDC_RecvCallback(Buf, *Len);
   return (USBD_OK);
   /* USER CODE END 6 */ 
 }

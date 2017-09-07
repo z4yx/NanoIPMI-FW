@@ -237,7 +237,7 @@ void Network_Task()
     if (gWIZNETINFO.dhcp == NETINFO_DHCP) {
         switch (DHCP_run()) {
         case DHCP_STOPPED:
-            LED_Board(2, LED_OFF);
+            // LED_Board(2, LED_OFF);
             break;
         case DHCP_IP_ASSIGN:
         case DHCP_IP_CHANGED:
@@ -255,7 +255,7 @@ void Network_Task()
             // run_user_applications = true;
             //
             // LOG_DBG("IP Leased");
-            LED_Board(2, LED_ON);
+            // LED_Board(2, LED_ON);
             break;
         case DHCP_FAILED:
             /* ===== Example pseudo code =====  */
@@ -276,6 +276,6 @@ void Network_Task()
             break;
         }
     }else{
-        LED_Board(2, LED_OFF);
+        // LED_Board(2, LED_OFF);
     }
 }

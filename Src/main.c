@@ -135,7 +135,6 @@ int main(void)
   MX_TIM3_Init();
 
   /* USER CODE BEGIN 2 */
-  LED_Board(1,LED_ON);
   LOG_INFO("MCU Initialized");
   HostUART_Init();
   Network_ChipInit();
@@ -154,6 +153,7 @@ int main(void)
     IPMIApp_Task();
     ATX_Task();
     HostUART_Task();
+    LED_Task();
   }
   /* USER CODE END 3 */
 

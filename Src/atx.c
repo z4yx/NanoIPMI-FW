@@ -1,6 +1,7 @@
 #include "common.h"
 #include "atx.h"
 #include "ipmi-app.h"
+#include "led.h"
 #include "stm32f1xx_hal.h"
 
 enum { 
@@ -78,12 +79,14 @@ void ATX_Task(void)
             if(ATX_GetPowerOnState()){
                 if(atx_state != STATE_NORMAL){
                     LOG_INFO("Powered on");
+                    LED_SetColor(COLOR_RED);
                     IPMIApp_EventCallback(Event_EventType_POWERON);
                     atx_state = STATE_NORMAL;
                 }
             }else{
                 if(atx_state != STATE_DOWN){
                     LOG_INFO("Powered off");
+                    LED_SetColor(COLOR_OFF);
                     IPMIApp_EventCallback(Event_EventType_POWEROFF);
                     atx_state = STATE_DOWN;
                 }

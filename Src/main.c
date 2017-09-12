@@ -54,6 +54,7 @@
 #include "network.h"
 #include "ipmi-app.h"
 #include "led.h"
+#include "nec_decode.h"
 #include "stm32f1xx_ll_usart.h"
 #include "common.h"
 /* USER CODE END Includes */
@@ -66,13 +67,14 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+static uint8_t stableBtnState = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,6 +87,7 @@ static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM4_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -97,7 +100,24 @@ void ATX_Task(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+static void btnDetectionTask(void)
+{
+    static uint8_t bounceState;
+    static uint32_t changedTs;
 
+    uint32_t now = HAL_GetTick();
+    uint8_t btnInput = HAL_GPIO_ReadPin(GPIOB, BTN_Pin);
+    if(btnInput ^ bounceState){
+        changedTs = now;
+    }
+    bounceState = btnInput;
+    if(now - changedTs > 10) //stable button state
+        stableBtnState = btnInput;
+}
+uint8_t BTN_GetDebouncedState(void)
+{
+    return stableBtnState;
+}
 /* USER CODE END 0 */
 
 int main(void)
@@ -133,9 +153,11 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM4_Init();
 
   /* USER CODE BEGIN 2 */
   LOG_INFO("MCU Initialized");
+  NEC_Init();
   HostUART_Init();
   Network_ChipInit();
   Network_AppInit();
@@ -154,6 +176,7 @@ int main(void)
     ATX_Task();
     HostUART_Task();
     LED_Task();
+    btnDetectionTask();
   }
   /* USER CODE END 3 */
 
@@ -450,6 +473,39 @@ static void MX_TIM3_Init(void)
 
 }
 
+/* TIM4 init function */
+static void MX_TIM4_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 71;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 12000;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /* USART1 init function */
 static void MX_USART1_UART_Init(void)
 {
@@ -531,7 +587,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : IR_Pin */
   GPIO_InitStruct.Pin = IR_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(IR_GPIO_Port, &GPIO_InitStruct);
 
@@ -540,6 +596,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 

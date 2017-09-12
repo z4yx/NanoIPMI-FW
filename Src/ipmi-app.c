@@ -10,6 +10,7 @@
 #include "atx.h"
 #include "host_uart.h"
 #include "led.h"
+#include "nec_decode.h"
 #include "app-version.h"
 
 
@@ -19,6 +20,8 @@ static char TOPIC_EVENT_MSG[40], TOPIC_STATUS_MSG[40], TOPIC_HELLO_MSG[40], TOPI
 static bool is_ID_function_on, OS_monitor_enabled;
 static uint8_t OS_monitor_return_sent;
 static volatile uint32_t OS_monitor_fed;
+static volatile bool irReceived;
+static volatile uint8_t irReceivedCmd;
 
 static void initTopics(const char* hostname)
 {
@@ -176,7 +179,7 @@ static int IPMIApp_InitConn(void)
     // data.username.cstring = opts.username;
     // data.password.cstring = opts.password;
 
-    data.keepAliveInterval = 10;
+    data.keepAliveInterval = 30;
     data.cleansession = 1;
     LOG_INFO("Connecting to broker");
     
@@ -250,6 +253,20 @@ void IPMIApp_EventCallback(uint8_t event)
     publishStruct(&s, Event_fields, TOPIC_EVENT_MSG, QOS0);
 }
 
+static void btnDetection(void)
+{
+    static uint8_t btnState = 1;
+
+    uint8_t btnInput = BTN_GetDebouncedState();
+
+    if(!btnState && btnInput){ // button up
+        is_ID_function_on = !is_ID_function_on;
+        LED_SetFlashing(is_ID_function_on);
+        LOG_DBG("set is_ID_function_on=%d by button", (int)is_ID_function_on);
+    }
+    btnState = btnInput;
+}
+
 void IPMIApp_Task(void)
 {
     if(OS_monitor_enabled){
@@ -272,6 +289,11 @@ void IPMIApp_Task(void)
             OS_monitor_return_sent ++ ;
         }
     }
+    btnDetection();
+    if(irReceived) {
+        irReceived = false;
+        LOG_DBG("IR -> 0x%x", irReceivedCmd);
+    }
     if(!Network_IsNetworkReady())
         return;
     if(!MQTTIsConnected(&mqtt_client)){
@@ -282,7 +304,14 @@ void IPMIApp_Task(void)
         }
     }
     else{
-        MQTTYield(&mqtt_client, 100);
+        MQTTYield(&mqtt_client, 150);
         reportStatus();
     }
 }
+
+void NEC_ReceiveInterrupt(NEC_FRAME f)
+{
+    irReceivedCmd = f.Command;
+    irReceived = true;
+}
+

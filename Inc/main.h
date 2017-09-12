@@ -70,6 +70,7 @@
 #define RST_SW_GPIO_Port GPIOB
 #define IR_Pin GPIO_PIN_14
 #define IR_GPIO_Port GPIOB
+#define IR_EXTI_IRQn EXTI15_10_IRQn
 #define PERST_Pin GPIO_PIN_15
 #define PERST_GPIO_Port GPIOB
 #define BTN_Pin GPIO_PIN_3

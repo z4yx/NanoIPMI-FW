@@ -28,15 +28,30 @@ void LED_Task(void)
     if(t-tick > 300){
         tick = t;
         off_state = ~off_state;
-        if(color == COLOR_OFF || (off_state && flashing)){
-            LED_Board(1, LED_OFF);
-            LED_Board(2, LED_OFF);
-        }else if(color == COLOR_GREEN){
-            LED_Board(1, LED_OFF);
-            LED_Board(2, LED_ON);
-        }else if(color == COLOR_RED){
-            LED_Board(1, LED_ON);
-            LED_Board(2, LED_OFF);
+        if(!flashing){
+            if(color == COLOR_OFF){
+                LED_Board(1, LED_OFF);
+                LED_Board(2, LED_OFF);
+            }else if(color == COLOR_RED){
+                LED_Board(1, LED_OFF);
+                LED_Board(2, LED_ON);
+            }else if(color == COLOR_GREEN){
+                LED_Board(1, LED_ON);
+                LED_Board(2, LED_OFF);
+            }
+        }else{
+            if(off_state){
+                LED_Board(1, LED_OFF);
+                LED_Board(2, LED_OFF);
+            }else{
+                if(color == COLOR_GREEN){
+                    LED_Board(1, LED_ON);
+                    LED_Board(2, LED_OFF);
+                }else{
+                    LED_Board(1, LED_OFF);
+                    LED_Board(2, LED_ON);
+                }
+            }
         }
     }
 }

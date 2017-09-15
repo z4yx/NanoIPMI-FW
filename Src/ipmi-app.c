@@ -217,12 +217,14 @@ void IPMIApp_CDC_RecvCallback(uint8_t *buf, uint32_t len)
     {
         switch(cdc_state){
             case 0:
-                if(0x55 == buf[i])
+                if(0x55 == buf[i]){
                     cdc_state = 1;
+                }
                 break;
             case 1:
-                if('$' == buf[i])
+                if('$' == buf[i]){
                     cdc_state = 2;
+                }
                 else
                     cdc_state = 0;
                 break;

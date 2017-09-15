@@ -106,7 +106,7 @@ static void btnDetectionTask(void)
     static uint32_t changedTs;
 
     uint32_t now = HAL_GetTick();
-    uint8_t btnInput = HAL_GPIO_ReadPin(GPIOB, BTN_Pin);
+    uint8_t btnInput = HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin);
     if(btnInput ^ bounceState){
         changedTs = now;
     }
@@ -557,15 +557,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(W_RST_GPIO_Port, W_RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(W_SEL_GPIO_Port, W_SEL_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED2_Pin|LED1_Pin|PWR_SW_Pin|RST_SW_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin : W_RST_Pin */
+  GPIO_InitStruct.Pin = W_RST_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(W_RST_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : W_INT_Pin */
   GPIO_InitStruct.Pin = W_INT_Pin;

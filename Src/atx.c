@@ -24,21 +24,21 @@ void ATX_PowerCommand(Command_PowerCommand_PowerOp op)
             break;
         case Command_PowerCommand_PowerOp_ON:
             if(atx_state == STATE_DOWN){
-                HAL_GPIO_WritePin(GPIOB, PWR_SW_Pin, GPIO_PIN_RESET);
+                HAL_GPIO_WritePin(PWR_SW_GPIO_Port, PWR_SW_Pin, GPIO_PIN_RESET);
                 pressed_timer = HAL_GetTick();
                 atx_state = STATE_PWR_SHORT_PRESSED;
             }
             break;
         case Command_PowerCommand_PowerOp_OFF:
             if(atx_state == STATE_NORMAL){
-                HAL_GPIO_WritePin(GPIOB, PWR_SW_Pin, GPIO_PIN_RESET);
+                HAL_GPIO_WritePin(PWR_SW_GPIO_Port, PWR_SW_Pin, GPIO_PIN_RESET);
                 pressed_timer = HAL_GetTick();
                 atx_state = STATE_PWR_LONG_PRESSED;
             }
             break;
         case Command_PowerCommand_PowerOp_RESET:
             if(atx_state == STATE_NORMAL){
-                HAL_GPIO_WritePin(GPIOB, RST_SW_Pin, GPIO_PIN_RESET);
+                HAL_GPIO_WritePin(RST_SW_GPIO_Port, RST_SW_Pin, GPIO_PIN_RESET);
                 pressed_timer = HAL_GetTick();
                 atx_state = STATE_RST_SHORT_PRESSED;
             }
@@ -71,20 +71,20 @@ void ATX_Task(void)
         case STATE_PWR_SHORT_PRESSED:
             if(HAL_GetTick() - pressed_timer >= 100){
                 atx_state = STATE_WAIT_CHECK;
-                HAL_GPIO_WritePin(GPIOB, PWR_SW_Pin, GPIO_PIN_SET);
+                HAL_GPIO_WritePin(PWR_SW_GPIO_Port, PWR_SW_Pin, GPIO_PIN_SET);
             }
             break;
         case STATE_PWR_LONG_PRESSED:
             if(HAL_GetTick() - pressed_timer >= 6000
                 || !ATX_GetPowerOnState()){
                 atx_state = STATE_WAIT_CHECK;
-                HAL_GPIO_WritePin(GPIOB, PWR_SW_Pin, GPIO_PIN_SET);
+                HAL_GPIO_WritePin(PWR_SW_GPIO_Port, PWR_SW_Pin, GPIO_PIN_SET);
             }
             break;
         case STATE_RST_SHORT_PRESSED:
             if(HAL_GetTick() - pressed_timer >= 100){
                 atx_state = STATE_WAIT_CHECK;
-                HAL_GPIO_WritePin(GPIOB, RST_SW_Pin, GPIO_PIN_SET);
+                HAL_GPIO_WritePin(RST_SW_GPIO_Port, RST_SW_Pin, GPIO_PIN_SET);
             }
             break;
         case STATE_WAIT_CHECK:

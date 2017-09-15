@@ -56,6 +56,8 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define W_RST_Pin GPIO_PIN_15
+#define W_RST_GPIO_Port GPIOC
 #define W_INT_Pin GPIO_PIN_0
 #define W_INT_GPIO_Port GPIOA
 #define W_SEL_Pin GPIO_PIN_4

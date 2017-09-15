@@ -111,6 +111,10 @@ void my_ip_conflict(void)
 void Network_ChipInit(void)
 {
     LL_SPI_Enable (SPI1);
+    HAL_GPIO_WritePin(W_RST_GPIO_Port,W_RST_Pin,GPIO_PIN_RESET);
+    HAL_Delay(10);
+    HAL_GPIO_WritePin(W_RST_GPIO_Port,W_RST_Pin,GPIO_PIN_SET);
+    HAL_Delay(10);
     reg_wizchip_cs_cbfunc(wizchip_select, wizchip_deselect);
     reg_wizchip_spi_cbfunc(wizchip_read, wizchip_write);
 

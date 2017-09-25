@@ -13,16 +13,16 @@
 ######################################
 # target
 ######################################
-TARGET = NanoIPMI
+TARGET = BLdr
 
 
 ######################################
 # building variables
 ######################################
 # debug build?
-DEBUG = 1
+DEBUG = 0
 # optimization
-OPT = -O2
+OPT = -Os
 
 
 #######################################
@@ -34,7 +34,6 @@ Application/MAKEFILE \
 Drivers/STM32F1xx_HAL_Driver \
 Drivers \
 Application/User \
-Middlewares/USB_Device_Library \
 Middlewares \
 Drivers/CMSIS \
 Application
@@ -50,19 +49,10 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-$(wildcard ioLibrary_Driver/Ethernet/*.c) \
-$(wildcard ioLibrary_Driver/Ethernet/W5500/*.c) \
-$(wildcard ioLibrary_Driver/Internet/DHCP/*.c) \
-$(wildcard MQTTPacket/*.c) \
-$(wildcard MQTTClient-C/*.c) \
-$(wildcard nanopb/*.c) \
-$(wildcard Src/*.c) \
+$(wildcard Bldr/*.c) \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd.c \
-Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c \
-Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
-Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_spi.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash_ex.c \
@@ -72,10 +62,8 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.c \
-Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pwr.c \
-Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_usb.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_dma.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c \
@@ -127,8 +115,6 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
--DPB_NO_PACKED_STRUCTS=1 \
--DMQTTCLIENT_PLATFORM_HEADER=MQTT-Plat.h \
 -DUSE_HAL_DRIVER \
 -DSTM32F103xB
 
@@ -138,17 +124,9 @@ AS_INCLUDES =
 
 # C includes
 C_INCLUDES =  \
--IioLibrary_Driver/Ethernet \
--IioLibrary_Driver/Ethernet/W5500 \
--IioLibrary_Driver/Internet/DHCP \
--IMQTTPacket \
--IMQTTClient-C \
--Inanopb \
--IInc \
+-IBLdr \
 -IDrivers/STM32F1xx_HAL_Driver/Inc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy \
--IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc \
--IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \
 -IDrivers/CMSIS/Include
 
@@ -171,7 +149,7 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)"
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F103CBTx_FLASH.ld
+LDSCRIPT = STM32F103CBTx_FLASH_BLDR.ld
 
 # libraries
 LIBS = -lc -lm
@@ -181,11 +159,8 @@ LDFLAGS = $(MCU) -specs=nosys.specs -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
-nanopb/control-channel.pb.c: nanopb/control-channel.proto 
-	protoc --plugin=protoc-gen-nanopb=generator/protoc-gen-nanopb --nanopb_out=./ $<
-
 flash: $(BUILD_DIR)/$(TARGET).bin
-	st-flash --reset write $(BUILD_DIR)/$(TARGET).bin 0x8003800
+	st-flash --reset write $(BUILD_DIR)/$(TARGET).bin 0x8000000
 
 #######################################
 # build the application

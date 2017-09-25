@@ -16,7 +16,7 @@
 
 static Network mqtt_net;
 static MQTTClient mqtt_client = DefaultClient;
-static char TOPIC_EVENT_MSG[40], TOPIC_STATUS_MSG[40], TOPIC_HELLO_MSG[40], TOPIC_CMD_MSG[40], TOPIC_SOL_MSG[40];
+static char TOPIC_EVENT_MSG[40], TOPIC_STATUS_MSG[40], TOPIC_CMD_MSG[40], TOPIC_SOL_MSG[40];
 static bool is_ID_function_on, OS_monitor_enabled;
 static uint8_t OS_monitor_return_sent;
 static volatile uint32_t OS_monitor_fed;
@@ -30,7 +30,6 @@ static void initTopics(const char* hostname)
     }
     snprintf(TOPIC_EVENT_MSG, sizeof(TOPIC_EVENT_MSG)-1, "/event/%s", hostname);
     snprintf(TOPIC_STATUS_MSG, sizeof(TOPIC_STATUS_MSG)-1, "/status/%s", hostname);
-    snprintf(TOPIC_HELLO_MSG, sizeof(TOPIC_HELLO_MSG)-1, "/hello/%s", hostname);
     snprintf(TOPIC_CMD_MSG, sizeof(TOPIC_CMD_MSG)-1, "/command/%s", hostname);
     snprintf(TOPIC_SOL_MSG, sizeof(TOPIC_SOL_MSG)-1, "/sol/%s", hostname);
 }
@@ -147,13 +146,6 @@ static void solMessageArrived(MessageData* md)
     if(pb_decode(&stream, Sol_fields, &cmd)){
         HostUART_InitSol(cmd.portNum);
     }
-}
-
-static void sayHello(void)
-{
-    int rc;
-    Hello hello = {.version = APP_VERSION};
-    publishStruct(&hello, Hello_fields, TOPIC_HELLO_MSG, QOS1);
 }
 
 static int IPMIApp_InitConn(void)
@@ -302,7 +294,7 @@ void IPMIApp_Task(void)
         initTopics(getHostnamefromDHCP());
         if(IPMIApp_InitConn() == SUCCESS){
             LOG_INFO("control channel established");
-            sayHello();
+            // sayHello();
         }
     }
     else{

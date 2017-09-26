@@ -30,9 +30,37 @@ bool Settings_IsValid(void)
 	return 1;
 }
 
+uint32_t Settings_GetNewFWCrc(void)
+{
+	return savedSettings.crc_new_fw;
+}
+
 wiz_NetInfo Settings_getNetworkConf(void)
 {
 	return savedSettings.netconf;
+}
+
+uint32_t Settings_GetUpgradeFlag(void)
+{
+	return savedSettings.upgrade_flags;
+}
+
+void Settings_SetUpgrade(uint32_t flag, uint32_t crc)
+{
+	tmpSettings = savedSettings;
+	tmpSettings.magic = SETTINGS_MAGIC;
+	tmpSettings.upgrade_flags = flag;
+	tmpSettings.crc_new_fw = crc;
+	tmpSettings.checksum = calc_checksum(&tmpSettings);
+	FlashEEP_WriteHalfWords((uint16_t*)&tmpSettings, (sizeof(tmpSettings)+1)/2, &savedSettings);
+}
+
+void Settings_EraseUpgradeFlag(void)
+{
+	tmpSettings = savedSettings;
+	tmpSettings.upgrade_flags = UPGRADE_FLAG_UNDEF;
+	tmpSettings.checksum = calc_checksum(&tmpSettings);
+	FlashEEP_WriteHalfWords((uint16_t*)&tmpSettings, (sizeof(tmpSettings)+1)/2, &savedSettings);
 }
 
 void Settings_updateNetworkConf(const wiz_NetInfo* newConf)

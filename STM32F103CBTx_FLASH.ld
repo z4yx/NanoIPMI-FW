@@ -78,9 +78,15 @@ SECTIONS
   . = ALIGN(4);
   } >EEPROM
 
+  .new_firmware :
+  {
+    _new_fw_addr = .;
+  } >NEWFIRMWARE
+  
   /* The startup code goes first into FLASH */
   .isr_vector :
   {
+    _usr_app_addr = .;
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);

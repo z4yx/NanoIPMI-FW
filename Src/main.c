@@ -55,6 +55,8 @@
 #include "ipmi-app.h"
 #include "led.h"
 #include "nec_decode.h"
+#include "fwupdate.h"
+#include "host_uart.h"
 #include "stm32f1xx_ll_usart.h"
 #include "common.h"
 /* USER CODE END Includes */
@@ -175,6 +177,7 @@ int main(void)
     IPMIApp_Task();
     ATX_Task();
     HostUART_Task();
+    FWUpdate_Task();
     LED_Task();
     btnDetectionTask();
   }

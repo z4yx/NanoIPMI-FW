@@ -3,6 +3,8 @@
 
 /* USER CODE BEGIN Includes */
 #include "stm32f1xx_ll_usart.h"
+#include "stm32f1xx_ll_crc.h"
+#include "settings.h"
 #include "common.h"
 /* USER CODE END Includes */
 
@@ -64,6 +66,52 @@ uint8_t BTN_GetDebouncedState(void)
 {
     return stableBtnState;
 }
+
+extern void* _usr_app_addr; // defined in linker script
+extern void* _new_fw_addr; // defined in linker script
+/*** Jump to application ******************************************************/
+void Bootloader_JumpToApplication(void)
+{
+    typedef void (*pFunction)(void);
+    LOG_DBG("_usr_app_addr=%p",_usr_app_addr);
+    uint32_t  JumpAddress = *(__IO uint32_t*)(_usr_app_addr + 4);
+    pFunction Jump = (pFunction)JumpAddress;
+    LOG_INFO("JumpAddress=%p", JumpAddress);
+    
+    HAL_RCC_DeInit();
+    HAL_DeInit();
+    
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL  = 0;
+    
+    //SET_VECTOR_TABLE
+    SCB->VTOR = _usr_app_addr;
+    
+    __set_MSP(*(__IO uint32_t*)_usr_app_addr);
+    Jump();
+}
+int Bootloader_FlashUprgade(void)
+{
+    uint32_t size = _new_fw_addr - _usr_app_addr;
+    for (int i = 0; i < size; i += FLASH_PAGE_SIZE)
+    {
+        FlashEEP_WriteHalfWords(
+            _new_fw_addr+i, 
+            FLASH_PAGE_SIZE, 
+            (uint32_t)(_usr_app_addr+i));
+    }
+    LL_CRC_ResetCRCCalculationUnit(CRC);
+    for (int i = 0; i < size; i += 4)
+    {
+        LL_CRC_FeedData32(CRC, *(uint32_t*)(_usr_app_addr + i));
+    }
+    if(Settings_GetNewFWCrc() != LL_CRC_ReadData32(CRC)){
+        LOG_ERR("CRC error");
+        return -1;
+    }
+    return 0;
+}
 /* USER CODE END 0 */
 
 int main(void)
@@ -96,7 +144,17 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   LOG_INFO("MCU Initialized");
+  if(Settings_IsValid()){
+    uint32_t flag = Settings_GetUpgradeFlag();
+    LOG_INFO("UpgradeFlag=%x", flag);
+    if(flag == UPGRADE_FLAG_COPY){
+      if(Bootloader_FlashUprgade() == 0)
+        Settings_EraseUpgradeFlag();
+    }
+  }
 
+  LOG_INFO("Jumping to application...");
+  Bootloader_JumpToApplication();
   /* USER CODE END 2 */
 
   /* Infinite loop */

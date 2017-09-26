@@ -57,6 +57,7 @@ $(wildcard MQTTPacket/*.c) \
 $(wildcard MQTTClient-C/*.c) \
 $(wildcard nanopb/*.c) \
 $(wildcard Src/*.c) \
+$(wildcard Src-common/*.c) \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd.c \
@@ -103,8 +104,8 @@ AS = $(BINPATH)/$(PREFIX)gcc -x assembler-with-cpp
 CP = $(BINPATH)/$(PREFIX)objcopy
 AR = $(BINPATH)/$(PREFIX)ar
 SZ = $(BINPATH)/$(PREFIX)size
-HEX = $(CP) -O ihex
-BIN = $(CP) -O binary -S
+HEX = $(CP) -R .eeprom -O ihex
+BIN = $(CP) -R .eeprom -O binary -S
  
 #######################################
 # CFLAGS
@@ -145,6 +146,7 @@ C_INCLUDES =  \
 -IMQTTClient-C \
 -Inanopb \
 -IInc \
+-IInc-common \
 -IDrivers/STM32F1xx_HAL_Driver/Inc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy \
 -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc \

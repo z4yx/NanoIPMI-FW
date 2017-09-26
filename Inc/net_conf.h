@@ -5,6 +5,7 @@
 enum{
     SOCK_MQTT   = 1,
 	SOCK_SOL   = 2,
+    SOCK_FWUPGRADE = 3,
     SOCK_DHCP   =    6
 };
 

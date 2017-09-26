@@ -1,5 +1,6 @@
 #include "common.h"
 #include "stm32f1xx_hal.h"
+#include "stm32f1xx_ll_rcc.h"
 #include "eeprom.h"
 #include <string.h>
 
@@ -23,7 +24,8 @@ void FlashEEP_WriteHalfWords(uint16_t* data, uint32_t length, uint32_t addr)
     page_start = page*PAGE_SIZE + FLASH_BASE;
     off = addr - page_start;
     LOG_DBG("Write Flash Addr %08x @ Page %lu Off=%lu", addr, page, off);
-    RCC_HSICmd(ENABLE);
+    LL_RCC_HSI_Enable();
+    while(!LL_RCC_HSI_IsReady());
     HAL_FLASH_Unlock();
     while(length > 0){
         LOG_DBG("page_start=%08x off=%lu size=%lu", page_start, off, length*sizeof(uint16_t));

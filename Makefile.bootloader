@@ -50,6 +50,7 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 $(wildcard Bldr/*.c) \
+$(wildcard Src-common/*.c) \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_pcd.c \
@@ -91,8 +92,8 @@ AS = $(BINPATH)/$(PREFIX)gcc -x assembler-with-cpp
 CP = $(BINPATH)/$(PREFIX)objcopy
 AR = $(BINPATH)/$(PREFIX)ar
 SZ = $(BINPATH)/$(PREFIX)size
-HEX = $(CP) -O ihex
-BIN = $(CP) -O binary -S
+HEX = $(CP) -R .eeprom -O ihex
+BIN = $(CP) -R .eeprom -O binary -S
  
 #######################################
 # CFLAGS
@@ -125,6 +126,8 @@ AS_INCLUDES =
 # C includes
 C_INCLUDES =  \
 -IBLdr \
+-IInc-common \
+-IioLibrary_Driver/Ethernet \
 -IDrivers/STM32F1xx_HAL_Driver/Inc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \

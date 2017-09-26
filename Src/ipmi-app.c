@@ -51,6 +51,12 @@ static void handleMessage(Command *cmd)
             LOG_DBG("fanCommand op=%d [%d] %d/255",
                 cmd->command.fanCommand.op, cmd->command.fanCommand.whichFan, cmd->command.fanCommand.dutyCycle);
             break;
+        case 5: //updateCommand
+            LOG_DBG("updateCommand");
+            FWUpdate_StartUpgrade(cmd->command.updateCommand.serverIP,
+                cmd->command.updateCommand.port,
+                cmd->command.updateCommand.crc32);
+            break;
         default:
             LOG_WARN("unknown cmd %d", cmd->which_command);
             break;

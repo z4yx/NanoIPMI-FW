@@ -67,14 +67,19 @@ uint8_t BTN_GetDebouncedState(void)
     return stableBtnState;
 }
 
-extern void* _usr_app_addr; // defined in linker script
-extern void* _new_fw_addr; // defined in linker script
+static const volatile __attribute__((section(".usr_app"))) uint32_t usr_app_1st;
+static const volatile __attribute__((section(".new_firmware"))) uint32_t new_firmware_1st;
+
 /*** Jump to application ******************************************************/
 void Bootloader_JumpToApplication(void)
 {
     typedef void (*pFunction)(void);
-    LOG_DBG("_usr_app_addr=%p",_usr_app_addr);
-    uint32_t  JumpAddress = *(__IO uint32_t*)(_usr_app_addr + 4);
+    LOG_DBG("_usr_app_addr=%p, msp=%08x", &usr_app_1st, usr_app_1st);
+    if((usr_app_1st & 0xf0000000)!= 0x20000000){
+        LOG_ERR("Wrong Main Stack Pointer");
+        for(;;);
+    }
+    uint32_t  JumpAddress = *(&usr_app_1st + 1);
     pFunction Jump = (pFunction)JumpAddress;
     LOG_INFO("JumpAddress=%p", JumpAddress);
     
@@ -86,25 +91,25 @@ void Bootloader_JumpToApplication(void)
     SysTick->VAL  = 0;
     
     //SET_VECTOR_TABLE
-    SCB->VTOR = _usr_app_addr;
+    SCB->VTOR = &usr_app_1st;
     
-    __set_MSP(*(__IO uint32_t*)_usr_app_addr);
+    __set_MSP(usr_app_1st);
     Jump();
 }
 int Bootloader_FlashUprgade(void)
 {
-    uint32_t size = _new_fw_addr - _usr_app_addr;
+    uint32_t size = (&new_firmware_1st) - (&usr_app_1st);
     for (int i = 0; i < size; i += FLASH_PAGE_SIZE)
     {
         FlashEEP_WriteHalfWords(
-            _new_fw_addr+i, 
+            (&new_firmware_1st)+i, 
             FLASH_PAGE_SIZE, 
-            (uint32_t)(_usr_app_addr+i));
+            (uint32_t)((&usr_app_1st)+i));
     }
     LL_CRC_ResetCRCCalculationUnit(CRC);
     for (int i = 0; i < size; i += 4)
     {
-        LL_CRC_FeedData32(CRC, *(uint32_t*)(_usr_app_addr + i));
+        LL_CRC_FeedData32(CRC, *(uint32_t*)((&usr_app_1st) + i));
     }
     if(Settings_GetNewFWCrc() != LL_CRC_ReadData32(CRC)){
         LOG_ERR("CRC error");

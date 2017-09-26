@@ -70,6 +70,14 @@ EEPROM (rx)     : ORIGIN = 0x801f800, LENGTH = 2K
 /* Define output sections */
 SECTIONS
 {
+  /* _usr_app_addr = LOADADDR(.isr_vector); */
+
+  /* _new_fw_addr = LOADADDR(.new_firmware); */
+  .new_firmware (NOLOAD) :
+  {
+    _new_fw_addr = .;
+    *(.new_firmware)
+  } >NEWFIRMWARE
 
   .eeprom :
   {
@@ -77,16 +85,10 @@ SECTIONS
       *(.eeprom)
   . = ALIGN(4);
   } >EEPROM
-
-  .new_firmware :
-  {
-    _new_fw_addr = .;
-  } >NEWFIRMWARE
   
   /* The startup code goes first into FLASH */
   .isr_vector :
   {
-    _usr_app_addr = .;
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);

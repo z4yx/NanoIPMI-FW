@@ -70,14 +70,18 @@ EEPROM (rx)     : ORIGIN = 0x801f800, LENGTH = 2K
 /* Define output sections */
 SECTIONS
 {
-  .usr_app :
+  /* _usr_app_addr = LOADADDR(.usr_app); */
+  .usr_app (NOLOAD) :
   {
     _usr_app_addr = .;
+    *(.usr_app)
   } >BOOTFIRMWARE
 
-  .new_firmware :
+  /* _new_fw_addr = LOADADDR(.new_firmware); */
+  .new_firmware (NOLOAD) :
   {
     _new_fw_addr = .;
+    *(.new_firmware)
   } >NEWFIRMWARE
 
   .eeprom :

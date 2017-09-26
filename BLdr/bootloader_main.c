@@ -79,9 +79,11 @@ void Bootloader_JumpToApplication(void)
         LOG_ERR("Wrong Main Stack Pointer");
         for(;;);
     }
-    uint32_t  JumpAddress = *(&usr_app_1st + 1);
+    uint32_t  JumpAddress = *(&usr_app_1st + 1)/* & ~3*/;
     pFunction Jump = (pFunction)JumpAddress;
     LOG_INFO("JumpAddress=%p", JumpAddress);
+
+    __disable_irq();
     
     HAL_RCC_DeInit();
     HAL_DeInit();
@@ -89,12 +91,14 @@ void Bootloader_JumpToApplication(void)
     SysTick->CTRL = 0;
     SysTick->LOAD = 0;
     SysTick->VAL  = 0;
-    
+
+
     //SET_VECTOR_TABLE
     SCB->VTOR = &usr_app_1st;
     
     __set_MSP(usr_app_1st);
-    Jump();
+    __ASM volatile ("bx %0\n" : : "r" (JumpAddress) : );
+    // Jump();
 }
 int Bootloader_FlashUprgade(void)
 {
@@ -144,7 +148,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
   MX_USART1_UART_Init();
 
   /* USER CODE BEGIN 2 */

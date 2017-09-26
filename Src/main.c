@@ -77,6 +77,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 static uint8_t stableBtnState = 1;
+extern const volatile uint32_t _usr_app_addr; //defined in linker script
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,6 +127,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+  SCB->VTOR = &_usr_app_addr;
 
   /* USER CODE END 1 */
 
@@ -158,6 +160,7 @@ int main(void)
   MX_TIM4_Init();
 
   /* USER CODE BEGIN 2 */
+  __enable_irq();
   LOG_INFO("MCU Initialized");
   NEC_Init();
   HostUART_Init();

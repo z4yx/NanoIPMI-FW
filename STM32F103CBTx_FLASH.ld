@@ -90,6 +90,7 @@ SECTIONS
   .isr_vector :
   {
     . = ALIGN(4);
+    _usr_app_addr = .;
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
   } >FLASH

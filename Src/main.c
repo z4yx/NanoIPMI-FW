@@ -167,11 +167,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   __enable_irq();
   LOG_INFO("MCU Initialized");
-  LL_CRC_ResetCRCCalculationUnit(CRC);
-  LL_CRC_FeedData32(CRC, rbit(0x55442210));
-  LL_CRC_FeedData32(CRC, rbit(0x12345678));
-  LL_CRC_FeedData32(CRC, 0);
-  LOG_DBG("CRC=%x",rbit(~LL_CRC_ReadData32(CRC)));  
   NEC_Init();
   HostUART_Init();
   Network_ChipInit();

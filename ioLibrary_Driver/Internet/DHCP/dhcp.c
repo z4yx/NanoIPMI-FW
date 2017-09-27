@@ -601,7 +601,9 @@ int8_t parseDHCPMSG(void)
 		p = (uint8_t *)(&pDHCPMSG->op);
 		p = p + 240;      // 240 = sizeof(RIP_MSG) + MAGIC_COOKIE size in RIP_MSG.opt - sizeof(RIP_MSG.opt)
 		e = p + (len - 240);
+   #ifdef _DHCP_DEBUG_   
         printf("DHCP opt size %d\r\n", len-240);
+   #endif   
 
 		while ( p < e ) {
 
@@ -662,7 +664,6 @@ int8_t parseDHCPMSG(void)
                         l = opt_len;
                     memcpy(DHCP_allocated_hostname, p, l);
                     DHCP_allocated_hostname[l] = '\0';
-                    printf("DHCP_allocated_hostname=%s\r\n", DHCP_allocated_hostname);
                 }
                 p += opt_len;
                 break;
@@ -704,9 +705,9 @@ uint8_t DHCP_run(void)
 	if(dhcp_state == STATE_DHCP_STOP) return DHCP_STOPPED;
 
 	if(getSn_SR(DHCP_SOCKET) != SOCK_UDP){
-        printf("create socket\r\n");
+        // printf("create socket\r\n");
 	   socket(DHCP_SOCKET, Sn_MR_UDP, DHCP_CLIENT_PORT, 0x00);
-        printf("create socket done\r\n");
+        // printf("create socket done\r\n");
     }
 
 	ret = DHCP_RUNNING;

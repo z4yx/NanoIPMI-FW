@@ -58,11 +58,14 @@
 #include "fwupdate.h"
 #include "host_uart.h"
 #include "stm32f1xx_ll_usart.h"
+#include "stm32f1xx_ll_crc.h"
 #include "common.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+
+CRC_HandleTypeDef hcrc;
 
 SPI_HandleTypeDef hspi1;
 
@@ -91,6 +94,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_CRC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -158,10 +162,16 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_CRC_Init();
 
   /* USER CODE BEGIN 2 */
   __enable_irq();
   LOG_INFO("MCU Initialized");
+  LL_CRC_ResetCRCCalculationUnit(CRC);
+  LL_CRC_FeedData32(CRC, rbit(0x55442210));
+  LL_CRC_FeedData32(CRC, rbit(0x12345678));
+  LL_CRC_FeedData32(CRC, 0);
+  LOG_DBG("CRC=%x",rbit(~LL_CRC_ReadData32(CRC)));  
   NEC_Init();
   HostUART_Init();
   Network_ChipInit();
@@ -271,6 +281,18 @@ static void MX_ADC1_Init(void)
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* CRC init function */
+static void MX_CRC_Init(void)
+{
+
+  hcrc.Instance = CRC;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }

@@ -34,6 +34,13 @@
 #endif
 #endif
 
+
+inline uint32_t rbit(uint32_t input){
+    uint32_t output;
+    __asm__("rbit %0, %1\n" : "=r"(output) : "r"(input));
+    return output;
+}
+
 void Chip_GetUniqueID(uint32_t ChipUniqueID[3]);
 int32_t ADC_getTemperatureReading(void);
 

@@ -11,6 +11,8 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 
+CRC_HandleTypeDef hcrc;
+
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim1;
@@ -37,6 +39,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_CRC_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
                                 
@@ -102,21 +105,25 @@ void Bootloader_JumpToApplication(void)
 }
 int Bootloader_FlashUprgade(void)
 {
-    uint32_t size = (&new_firmware_1st) - (&usr_app_1st);
+    uint32_t size, crc;
+    Settings_GetNewFWInfo(&crc, &size);
+    LOG_INFO("New FW size 0x%x", size);
+    if(size == 0)
+        return 0;
     for (int i = 0; i < size; i += FLASH_PAGE_SIZE)
     {
         FlashEEP_WriteHalfWords(
-            (&new_firmware_1st)+i, 
-            FLASH_PAGE_SIZE, 
-            (uint32_t)((&usr_app_1st)+i));
+            (uint32_t)(&new_firmware_1st)+i, 
+            (size-i > FLASH_PAGE_SIZE ? FLASH_PAGE_SIZE : size-i)/2, 
+            (uint32_t)(&usr_app_1st)+i);
     }
     LL_CRC_ResetCRCCalculationUnit(CRC);
-    for (int i = 0; i < size; i += 4)
+    for (int i = 0; i < size/4; i++)
     {
-        LL_CRC_FeedData32(CRC, *(uint32_t*)((&usr_app_1st) + i));
+        LL_CRC_FeedData32(CRC, rbit((&usr_app_1st)[i]));
     }
-    if(Settings_GetNewFWCrc() != LL_CRC_ReadData32(CRC)){
-        LOG_ERR("CRC error");
+    if(crc != rbit(~LL_CRC_ReadData32(CRC))){
+        LOG_ERR("CRC error, %x vs %x", crc, rbit(~LL_CRC_ReadData32(CRC)));
         return -1;
     }
     return 0;
@@ -149,6 +156,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_CRC_Init();
 
   /* USER CODE BEGIN 2 */
   LOG_INFO("MCU Initialized");
@@ -261,6 +269,18 @@ static void MX_ADC1_Init(void)
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
+/* CRC init function */
+static void MX_CRC_Init(void)
+{
+
+  hcrc.Instance = CRC;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }

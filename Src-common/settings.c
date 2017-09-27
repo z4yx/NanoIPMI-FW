@@ -20,6 +20,23 @@ uint32_t calc_checksum(struct saved_settings_t *settings)
 	return sum;
 }
 
+static void populate_default(struct saved_settings_t *settings)
+{
+	settings->magic = SETTINGS_MAGIC;
+	settings->upgrade_flags = UPGRADE_FLAG_UNDEF;
+	settings->crc_new_fw = 0;
+	settings->sz_new_fw = 0;
+	settings->netconf = (wiz_NetInfo){ 
+							.mac = {0x78,0xCA,0x83,0x40,0x01,0x08},
+                            .ip = {192, 168, 1, 80},
+                            .sn = {255, 255, 255, 0},
+                            .gw = {192, 168, 1, 1},
+                            .dns = {8, 8, 8, 8},
+                            .logserver = {192, 168, 1, 1},
+                            .dhcp = NETINFO_DHCP
+                        };
+}
+
 bool Settings_IsValid(void)
 {
 	LOG_DBG("magic=%x", savedSettings.magic);
@@ -30,9 +47,10 @@ bool Settings_IsValid(void)
 	return 1;
 }
 
-uint32_t Settings_GetNewFWCrc(void)
+uint32_t Settings_GetNewFWInfo(uint32_t *crc, uint32_t *sz_new_fw)
 {
-	return savedSettings.crc_new_fw;
+	*crc = savedSettings.crc_new_fw;
+	*sz_new_fw = savedSettings.sz_new_fw;
 }
 
 wiz_NetInfo Settings_getNetworkConf(void)
@@ -45,11 +63,13 @@ uint32_t Settings_GetUpgradeFlag(void)
 	return savedSettings.upgrade_flags;
 }
 
-void Settings_SetUpgrade(uint32_t flag, uint32_t crc)
+void Settings_SetUpgrade(uint32_t flag, uint32_t crc, uint32_t sz_new_fw)
 {
 	tmpSettings = savedSettings;
-	tmpSettings.magic = SETTINGS_MAGIC;
+	if(!Settings_IsValid())
+		populate_default(&tmpSettings);
 	tmpSettings.upgrade_flags = flag;
+	tmpSettings.sz_new_fw = sz_new_fw;
 	tmpSettings.crc_new_fw = crc;
 	tmpSettings.checksum = calc_checksum(&tmpSettings);
 	FlashEEP_WriteHalfWords((uint16_t*)&tmpSettings, (sizeof(tmpSettings)+1)/2, &savedSettings);
@@ -57,8 +77,12 @@ void Settings_SetUpgrade(uint32_t flag, uint32_t crc)
 
 void Settings_EraseUpgradeFlag(void)
 {
+	if(!Settings_IsValid())
+		return;
 	tmpSettings = savedSettings;
 	tmpSettings.upgrade_flags = UPGRADE_FLAG_UNDEF;
+	tmpSettings.sz_new_fw = 0;
+	tmpSettings.crc_new_fw = 0;
 	tmpSettings.checksum = calc_checksum(&tmpSettings);
 	FlashEEP_WriteHalfWords((uint16_t*)&tmpSettings, (sizeof(tmpSettings)+1)/2, &savedSettings);
 }
@@ -66,7 +90,8 @@ void Settings_EraseUpgradeFlag(void)
 void Settings_updateNetworkConf(const wiz_NetInfo* newConf)
 {
 	tmpSettings = savedSettings;
-	tmpSettings.magic = SETTINGS_MAGIC;
+	if(!Settings_IsValid())
+		populate_default(&tmpSettings);
 	tmpSettings.netconf = *newConf;
 	tmpSettings.checksum = calc_checksum(&tmpSettings);
 	FlashEEP_WriteHalfWords((uint16_t*)&tmpSettings, (sizeof(tmpSettings)+1)/2, &savedSettings);

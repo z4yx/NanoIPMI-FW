@@ -52,7 +52,7 @@ static void handleMessage(Command *cmd)
                 cmd->command.fanCommand.op, cmd->command.fanCommand.whichFan, cmd->command.fanCommand.dutyCycle);
             break;
         case 5: //updateCommand
-            LOG_DBG("updateCommand");
+            LOG_DBG("updateCommand %x", cmd->command.updateCommand.crc32);
             FWUpdate_StartUpgrade(cmd->command.updateCommand.serverIP,
                 cmd->command.updateCommand.port,
                 cmd->command.updateCommand.crc32);

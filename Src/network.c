@@ -137,6 +137,8 @@ void Network_AppInit()
     if(Settings_IsValid()) {
         LOG_INFO("Loading saved settings");
         gWIZNETINFO = Settings_getNetworkConf();
+    }else{
+        Settings_updateNetworkConf(&gWIZNETINFO);
     }
     Net_Conf();
 

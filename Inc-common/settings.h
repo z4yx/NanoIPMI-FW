@@ -14,6 +14,7 @@ struct saved_settings_t
     uint32_t checksum;
     uint32_t upgrade_flags;
     uint32_t crc_new_fw;
+    uint32_t sz_new_fw;
     wiz_NetInfo netconf;
 };
 
@@ -22,8 +23,8 @@ wiz_NetInfo Settings_getNetworkConf(void);
 void Settings_updateNetworkConf(const wiz_NetInfo* newConf);
 uint32_t Settings_GetUpgradeFlag(void);
 void Settings_EraseUpgradeFlag(void);
-uint32_t Settings_GetNewFWCrc(void);
-void Settings_SetUpgrade(uint32_t flag, uint32_t crc);
+uint32_t Settings_GetNewFWInfo(uint32_t *crc, uint32_t *sz_new_fw);
+void Settings_SetUpgrade(uint32_t flag, uint32_t crc, uint32_t sz_new_fw);
 
 
 #endif

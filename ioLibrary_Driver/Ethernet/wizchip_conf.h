@@ -394,7 +394,7 @@ typedef struct wiz_NetInfo_t
    uint8_t gw[4];   ///< Gateway IP Address
    uint8_t dns[4];  ///< DNS server IP Address
    uint8_t logserver[4];  ///< Log server IP Address
-   dhcp_mode dhcp;  ///< 1 - Static, 2 - DHCP
+   uint8_t dhcp;  ///< 1 - Static, 2 - DHCP
 }wiz_NetInfo;
 
 /**

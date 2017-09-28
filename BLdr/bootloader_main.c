@@ -110,8 +110,11 @@ int Bootloader_FlashUprgade(void)
     LOG_INFO("New FW size 0x%x", size);
     if(size == 0)
         return 0;
+    LOG_INFO("Programming");
     for (int i = 0; i < size; i += FLASH_PAGE_SIZE)
     {
+        putchar('.');
+        fflush(stdout);
         FlashEEP_WriteHalfWords(
             (uint32_t)(&new_firmware_1st)+i, 
             (size-i > FLASH_PAGE_SIZE ? FLASH_PAGE_SIZE : size-i)/2, 
@@ -122,6 +125,7 @@ int Bootloader_FlashUprgade(void)
     {
         LL_CRC_FeedData32(CRC, rbit((&usr_app_1st)[i]));
     }
+    printf(".\r\n");
     if(crc != rbit(~LL_CRC_ReadData32(CRC))){
         LOG_ERR("CRC error, %x vs %x", crc, rbit(~LL_CRC_ReadData32(CRC)));
         return -1;
@@ -164,8 +168,10 @@ int main(void)
     uint32_t flag = Settings_GetUpgradeFlag();
     LOG_INFO("UpgradeFlag=%x", flag);
     if(flag == UPGRADE_FLAG_COPY){
-      if(Bootloader_FlashUprgade() == 0)
+      if(Bootloader_FlashUprgade() == 0){
+        LOG_INFO("Succeeded!");
         Settings_EraseUpgradeFlag();
+      }
     }
   }
 

@@ -104,6 +104,8 @@ void FWUpdate_Task(void)
             if(rc > 0){
                 buf_offset += rc;
                 if(buf_offset == FLASH_PAGE_SIZE){
+                    putchar('.');
+                    fflush(stdout);
                     FlashEEP_WriteHalfWords(databuf, buf_offset/2, page_addr);
                     // for (int i = 0; i < FLASH_PAGE_SIZE; i+=4)
                     // {
@@ -117,6 +119,7 @@ void FWUpdate_Task(void)
                 //check if connection closed (i.e. completed transfer)
                 getsockopt(my_socket, SO_STATUS, &sock_status);
                 if(sock_status == SOCK_CLOSE_WAIT || sock_status == SOCK_CLOSED){
+                    printf(".\r\n");
                     if(buf_offset > 0){
                         while(buf_offset & 3){
                             //padding 0xff
@@ -135,6 +138,7 @@ void FWUpdate_Task(void)
                     close(my_socket);
                     my_socket = -1;
                     if(verify_crc((uint32_t*)page_addr, _crc)){
+                        LOG_INFO("CRC OK");
                         Settings_SetUpgrade(UPGRADE_FLAG_COPY, _crc, fw_size);
                         state = S_RESET;
                     }else{
@@ -144,6 +148,7 @@ void FWUpdate_Task(void)
             }
             break;
         case S_RESET:
+            LOG_INFO("Reseting...");
             HAL_NVIC_SystemReset(); //shouldn't return
             state = S_IDLE;
             break;

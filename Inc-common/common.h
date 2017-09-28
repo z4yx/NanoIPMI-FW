@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define LOGLEVEL 4
+#define LOGLEVEL 3
 
 #define LOG_ERR(...) do{}while(0)
 #define LOG_WARN(...) do{}while(0)

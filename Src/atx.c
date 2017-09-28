@@ -18,7 +18,7 @@ uint32_t pressed_timer;
 
 void ATX_PowerCommand(Command_PowerCommand_PowerOp op)
 {
-    LOG_DBG("PowerCommand %d", op);
+    LOG_INFO("PowerCommand %d", op);
     switch(op){
         case Command_PowerCommand_PowerOp_NOOP:
             break;

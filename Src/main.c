@@ -166,6 +166,7 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   __enable_irq();
+  printf("  \r\n\r\n");
   LOG_INFO("MCU Initialized");
   NEC_Init();
   HostUART_Init();

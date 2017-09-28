@@ -182,7 +182,7 @@ static int IPMIApp_InitConn(void)
     LOG_INFO("Connecting to broker");
     
     rc = MQTTConnect(&mqtt_client, &data);
-    LOG_INFO("MQTTConnect() = %d", rc);
+    LOG_DBG("MQTTConnect() = %d", rc);
     if(rc < 0){
         MQTTPlat_NetworkDisconnect(&mqtt_net);
         return FAILURE;
@@ -190,14 +190,14 @@ static int IPMIApp_InitConn(void)
     
     LOG_INFO("Subscribing to %s", topic);
     rc = MQTTSubscribe(&mqtt_client, topic, QOS1, messageArrived);
-    LOG_INFO("MQTTSubscribe() = %d", rc);
+    LOG_DBG("MQTTSubscribe() = %d", rc);
     if(rc != SUCCESS){
         MQTTPlat_NetworkDisconnect(&mqtt_net);
         return rc;
     }
 
     rc = MQTTSubscribe(&mqtt_client, TOPIC_SOL_MSG, QOS1, solMessageArrived);
-    LOG_INFO("MQTTSubscribe() = %d", rc);
+    LOG_DBG("MQTTSubscribe() = %d", rc);
 
     return rc;
 }

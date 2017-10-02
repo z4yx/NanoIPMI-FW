@@ -212,12 +212,6 @@ void NEC_HandleEXTI() {
 	}
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
-	if(GPIO_Pin == IR_Pin){
-		NEC_HandleEXTI();
-	}
-}
-
 void NEC_StartTimer() { // Timer for overflow detection
 	LL_TIM_SetCounter(nec_timer->Instance, 0);
 	HAL_TIM_Base_Start_IT(nec_timer);

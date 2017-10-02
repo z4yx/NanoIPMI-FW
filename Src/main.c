@@ -79,7 +79,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-static uint8_t stableBtnState = 1;
+static uint32_t btnEvent = 0;
 extern const volatile uint32_t _usr_app_addr; //defined in linker script
 /* USER CODE END PV */
 
@@ -109,21 +109,21 @@ void ATX_Task(void);
 /* USER CODE BEGIN 0 */
 static void btnDetectionTask(void)
 {
-    static uint8_t bounceState;
-    static uint32_t changedTs;
-
-    uint32_t now = HAL_GetTick();
-    uint8_t btnInput = HAL_GPIO_ReadPin(BTN_GPIO_Port, BTN_Pin);
-    if(btnInput ^ bounceState){
-        changedTs = now;
-    }
-    bounceState = btnInput;
-    if(now - changedTs > 10) //stable button state
-        stableBtnState = btnInput;
+    btnEvent = 1;
 }
-uint8_t BTN_GetDebouncedState(void)
+uint8_t BTN_GetEvent(void)
 {
-    return stableBtnState;
+    uint8_t tmp = btnEvent;
+    btnEvent = 0;
+    return tmp;
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+    if(GPIO_Pin == IR_Pin){
+        NEC_HandleEXTI();
+    }else if(GPIO_Pin == BTN_Pin){
+        btnDetectionTask();
+    }
 }
 /* USER CODE END 0 */
 
@@ -188,7 +188,6 @@ int main(void)
     HostUART_Task();
     FWUpdate_Task();
     LED_Task();
-    btnDetectionTask();
   }
   /* USER CODE END 3 */
 
@@ -619,19 +618,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : IR_Pin */
-  GPIO_InitStruct.Pin = IR_Pin;
+  /*Configure GPIO pins : IR_Pin BTN_Pin */
+  GPIO_InitStruct.Pin = IR_Pin|BTN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(IR_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PERST_Pin BTN_Pin */
-  GPIO_InitStruct.Pin = PERST_Pin|BTN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : PERST_Pin */
+  GPIO_InitStruct.Pin = PERST_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(PERST_GPIO_Port, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 2);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 

@@ -255,16 +255,16 @@ void IPMIApp_EventCallback(uint8_t event)
 
 static void btnDetection(void)
 {
-    static uint8_t btnState = 1;
+    static uint32_t lastTrig;
 
-    uint8_t btnInput = BTN_GetDebouncedState();
+    uint8_t btnInput = BTN_GetEvent();
 
-    if(!btnState && btnInput){ // button up
+    if(btnInput && HAL_GetTick()-lastTrig > 1000){
         is_ID_function_on = !is_ID_function_on;
         LED_SetFlashing(is_ID_function_on);
         LOG_DBG("set is_ID_function_on=%d by button", (int)is_ID_function_on);
+        lastTrig = HAL_GetTick();
     }
-    btnState = btnInput;
 }
 
 void IPMIApp_Task(void)

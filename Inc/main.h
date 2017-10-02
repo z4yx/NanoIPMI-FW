@@ -77,6 +77,7 @@
 #define PERST_GPIO_Port GPIOB
 #define BTN_Pin GPIO_PIN_3
 #define BTN_GPIO_Port GPIOB
+#define BTN_EXTI_IRQn EXTI3_IRQn
 
 /* USER CODE BEGIN Private defines */
 

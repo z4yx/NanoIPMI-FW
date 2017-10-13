@@ -18,7 +18,7 @@ static Network mqtt_net;
 static MQTTClient mqtt_client = DefaultClient;
 static char TOPIC_EVENT_MSG[40], TOPIC_STATUS_MSG[40], TOPIC_CMD_MSG[40], TOPIC_SOL_MSG[40];
 static bool is_ID_function_on, OS_monitor_enabled;
-static uint8_t OS_monitor_return_sent;
+static volatile uint32_t OS_monitor_return_sent;
 static volatile uint32_t OS_monitor_fed;
 static volatile bool irReceived;
 static volatile uint8_t irReceivedCmd;
@@ -206,6 +206,7 @@ void IPMIApp_HostUART_RecvCallback(uint8_t data)
 {
     //feed watchdog
     OS_monitor_fed = HAL_GetTick();
+    OS_monitor_return_sent = 0;
 }
 void IPMIApp_CDC_RecvCallback(uint8_t *buf, uint32_t len)
 {
@@ -249,6 +250,10 @@ void IPMIApp_EventCallback(uint8_t event)
         .type = event
     };
     LOG_INFO("Report event %u", (uint32_t)event);
+    if(event == Event_EventType_POWEROFF
+        || event == Event_EventType_POWERON){
+        OS_monitor_enabled = false;
+    }
 
     publishStruct(&s, Event_fields, TOPIC_EVENT_MSG, QOS0);
 }
@@ -275,7 +280,6 @@ void IPMIApp_Task(void)
             IPMIApp_EventCallback(Event_EventType_DOGTRIGGERED);
             ATX_PowerCommand(Command_PowerCommand_PowerOp_RESET);
             OS_monitor_enabled = false;
-            OS_monitor_return_sent = 0;
         }
         else if(HAL_GetTick()-OS_monitor_fed > 60000+1000
             && OS_monitor_return_sent == 1){

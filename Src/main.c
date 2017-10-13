@@ -168,10 +168,18 @@ int main(void)
   __enable_irq();
   printf("  \r\n\r\n");
   LOG_INFO("MCU Initialized");
+  HAL_ADCEx_Calibration_Start(&hadc1);
   NEC_Init();
   HostUART_Init();
   Network_ChipInit();
   Network_AppInit();
+
+  /*
+  for(;;){
+    printf("temp=%d\n", ADC_getTemperatureReading());
+    HAL_Delay(1000);
+  }
+  */
 
   /* USER CODE END 2 */
 

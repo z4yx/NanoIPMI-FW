@@ -50,7 +50,7 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-$(wildcard Bldr/*.c) \
+$(wildcard BLdr/*.c) \
 $(wildcard Src-common/*.c) \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_adc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_cortex.c \
